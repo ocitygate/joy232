@@ -96,7 +96,6 @@ void send(char* data, int bytes) __naked
         LD B,3(IY)
 
         ;SEND BC BYTES FROM (HL) TO JOYSTICK2 PIN6
-        ;TIME CRITICAL OPERATION, ALWAYS DISABLE INTERRUPTS BEFORE CALLING
         ;MSX Z80 3.579545MHz, 57600bps, 62cycles/bit
         ;Z80+M1 TIMING IN BRACKETS REFER TO http://map.grauw.nl/resources/z80instr.php
 
