@@ -1,7 +1,7 @@
 char recv(char* data, unsigned int bytes) __naked
 {
     __asm
-    
+
         LD IY,#2
         ADD IY,SP
         LD L,0(IY)
@@ -17,7 +17,7 @@ char recv(char* data, unsigned int bytes) __naked
         RX:
 
             DI                  ;TIME CRITICAL OPERATION, DISABLE INTERRUPTS
-            
+
             LD E,#0x01          ;FOR FASTER 'AND' OPERATION: 'AND E'(5) VS 'AND #0x01'(8)
 
             LD A,#0x0F          ;PSG REGISTER 15
@@ -86,15 +86,15 @@ char recv(char* data, unsigned int bytes) __naked
 
 void send(char* data, int bytes) __naked
 {
-	__asm
+    __asm
 
-	    LD IY,#2
-		ADD IY,SP
-		LD L,0(IY)
-		LD H,1(IY)
-		LD C,2(IY)
-		LD B,3(IY)
-		
+        LD IY,#2
+        ADD IY,SP
+        LD L,0(IY)
+        LD H,1(IY)
+        LD C,2(IY)
+        LD B,3(IY)
+
         ;SEND BC BYTES FROM (HL) TO JOYSTICK2 PIN6
         ;TIME CRITICAL OPERATION, ALWAYS DISABLE INTERRUPTS BEFORE CALLING
         ;MSX Z80 3.579545MHz, 57600bps, 62cycles/bit
@@ -104,16 +104,16 @@ void send(char* data, int bytes) __naked
 
             DI                  ;TIME CRITICAL OPERATION, DISABLE INTERRUPTS
 
-            LD A,#0x0F	        ;PSG REGISTER 15
+            LD A,#0x0F          ;PSG REGISTER 15
             OUT (0xA0),A
-            
 
-            RES 2,A		        ;PIN6 0V
-            LD E,A		        ;STORE IN E
-            
-            SET 2,A		        ;PIN6 5V
-            LD D,A		        ;STORE IN D
-            
+
+            RES 2,A             ;PIN6 0V
+            LD E,A              ;STORE IN E
+
+            SET 2,A             ;PIN6 5V
+            LD D,A              ;STORE IN D
+
         TXSTARTBIT:
 
             PUSH BC             ;(12)
@@ -135,7 +135,7 @@ void send(char* data, int bytes) __naked
             JR NC,TXBIT         ;(13/8)         |
             LD A,D              ;(5) SET 1      | (63)
                                 ;               |
-        TXBIT:                  ;               | 
+        TXBIT:                  ;               |
                                 ;               |
             OUT (0xA1),A        ;(12)           |* -4 -3 -2 -1 0 +1 +2 +3
             DJNZ TXBITLOOP      ;(13/8)         |
@@ -148,12 +148,12 @@ void send(char* data, int bytes) __naked
             NOP                 ;(5) ALIGNMENT
             NOP                 ;(5) ALIGNMENT
             ADD A,#0            ;(8) ALIGNMENT
-            
+
         TXSTOPBIT:
 
             LD A,D              ;(5)
             OUT (0xA1),A        ;(12)* 0
-            
+
         TXNEXTBYTE:
 
             INC HL              ;(7)
@@ -167,6 +167,6 @@ void send(char* data, int bytes) __naked
             EI                  ;ENABLE INTERRUPTS
             RET                 ;(11)
 
-	__endasm;
+    __endasm;
 }
 
