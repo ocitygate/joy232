@@ -1,0 +1,78 @@
+;SEND BC BYTES FROM (HL) TO JOYSTICK2 PIN6
+;TIME CRITICAL OPERATION, ALWAYS DISABLE INTERRUPTS BEFORE CALLING
+;MSX Z80 3.579545MHz, 57600bps, 62cycles/bit
+;Z80+M1 TIMING IN BRACKETS REFER TO http://map.grauw.nl/resources/z80instr.php
+
+TX:
+
+    PUSH HL
+    PUSH DE
+    PUSH BC
+    PUSH AF
+    
+    LD A,0FH            ;PSG REGISTER 15
+    OUT (0A0H),A
+    IN A,(0A2H)
+
+    RES 2,A             ;PIN6 0V
+    LD E,A              ;STORE IN E
+
+    SET 2,A             ;PIN6 5V
+    LD D,A              ;STORE IN D
+
+TXSTARTBIT:
+
+    PUSH BC             ;(12)
+    LD C,(HL)           ;(8)
+    
+    LD B,8              ;(8)
+
+    LD A,E              ;(5)
+    OUT (0A1H),A        ;(12)* 0 +1
+
+    INC HL              ;(7) ALIGNMENT
+    DEC HL              ;(7) ALIGNMENT
+
+TXBITLOOP:
+
+    ADD A,0             ;(8) ALIGNMENT  |
+                        ;               |
+    RRC C               ;(10)           |
+                        ;               |
+    LD A,E              ;(5) SET 0      |
+    JR NC,TXBIT         ;(13/8)         |
+    LD A,D              ;(5) SET 1      | (62)
+                        ;               |
+                        ;               |
+TXBIT:                  ;               |
+                        ;               |
+    OUT (0A1H),A        ;(12)           |* 0
+    DJNZ TXBITLOOP      ;(14/9)         |
+
+TXENDBITLOOP:
+
+    ADD A,0             ;(8) ALIGNMENT
+
+    POP BC              ;(11)
+    DEC BC              ;(7)
+    LD A,B              ;(5)
+    OR C                ;(5)
+    
+TXSTOPBIT:
+
+    LD A,D              ;(5)
+    OUT (0A1H),A        ;(12)* 0
+
+TXNEXTBYTE:
+
+    INC HL              ;(7)
+    JP NZ,TXSTARTBIT    ;(11)
+
+TXEXIT:
+
+    POP AF              ;(11)
+    POP BC              ;(11)
+    POP DE              ;(11)
+    POP HL              ;(11)
+    
+    RET                 ;(11)

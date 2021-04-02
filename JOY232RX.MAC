@@ -1,0 +1,74 @@
+;RECEIVE BC BYTES FROM JOYSTICK2 PIN1 TO (HL)
+;TIME CRITICAL OPERATION, ALWAYS DISABLE INTERRUPTS BEFORE CALLING
+;MSX Z80 3.579545MHz, 57600bps, 62cycles/bit
+;Z80+M1 TIMING IN BRACKETS REFER TO http://map.grauw.nl/resources/z80instr.php
+
+RX:
+
+    PUSH HL
+    PUSH DE
+    PUSH BC
+    PUSH AF
+    
+    LD E,01H            ;FOR FASTER 'AND' OPERATION: 'AND E'(5) VS 'AND 01H'(8)
+
+    LD A,0FH            ;PSG REGISTER 15
+    OUT (0A0H),A
+    IN A,(0A2H)
+    SET 6,A             ;SELECT JOYSTICK2
+    OUT (0A1H),A
+
+    LD A,0EH            ;PSG REGISTER 14
+    OUT (0A0H),A
+
+RXMARK:
+
+    IN A,(0A2H)         ;(12)*
+    AND E               ;(5)
+    JP NZ,RXSTARTBIT    ;(11)
+    HALT                ;HALT: LINE NOT READY
+
+RXSTARTBIT:             ;WAIT FOR STARTBIT
+
+    IN A,(0A2H)         ;(12)* |
+    AND E               ;(5)   | (28)
+    JP NZ,RXSTARTBIT    ;(11)  |
+
+RXALIGNMENT:
+
+    NOP                 ;(5) ALIGNMENT |
+    NOP                 ;(5) ALIGNMENT |
+    INC HL              ;(7) ALIGNMENT | (24)
+    DEC HL              ;(7) ALIGNMENT |
+
+RXINITBITLOOP:
+
+    LD D,B              ;(5) |
+    LD B,08H            ;(8) | (13)
+
+RXBITLOOP:
+
+    INC HL              ;(7) ALIGNMENT                      |
+    DEC HL              ;(7) ALIGNMENT                      |
+    IN A,(0A2H)         ;(12)* 0                            |
+    RRCA                ;(5) SHIFT DATA BIT 0 TO CARRY      | (62)
+    RR (HL)             ;(17) SHIFT CARRY TO (HL)           |
+    DJNZ RXBITLOOP      ;(14/9)                             |
+
+RXNEXTBYTE:
+
+    LD B,D              ;(5)  |
+    INC HL              ;(7)  |
+    DEC BC              ;(7)  |
+    LD A,B              ;(5)  | (40)
+    OR C                ;(5)  |
+    JP NZ,RXSTARTBIT    ;(11) |
+
+RXEXIT:
+
+    POP AF
+    POP BC
+    POP DE
+    POP HL
+    
+    RET
